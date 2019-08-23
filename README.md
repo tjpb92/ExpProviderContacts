@@ -1,5 +1,5 @@
 # ExpProviderContacts
-Programme Java permettant d?exporter d?une base de données Mongo DB locale vers un fichier Excel des intervenants (ProviderContacts)
+Programme Java permettant d'exporter des intervenants (ProviderContacts) d'une base de données Mongo DB locale vers un fichier Excel
 
 ## Utilisation:
 ```
@@ -15,8 +15,7 @@ où :
 * ```-t``` le programme s'exécute en mode test, les transactions en base de données ne sont pas faites. Désactivé par défaut (paramètre optionnel).
 
 ## Pré-requis :
-- Java 6 ou supérieur.
-- JDBC Informix
+- Java 8 ou supérieur.
 - Driver MongoDB
 - [xmlbeans-2.6.0.jar](https://xmlbeans.apache.org/)
 - [commons-collections4-4.1.jar](https://commons.apache.org/proper/commons-collections/download_collections.cgi)
