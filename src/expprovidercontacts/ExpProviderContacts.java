@@ -17,6 +17,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.apache.poi.common.usermodel.HyperlinkType;
@@ -47,7 +48,7 @@ import utils.Md5;
  * d'une base de données Mongo DB locale vers un fichier Excel
  *
  * @author Thierry Baribaud
- * @version 1.01
+ * @version 1.02
  */
 public class ExpProviderContacts {
 
@@ -88,9 +89,6 @@ public class ExpProviderContacts {
      * clientCompanyUuid : identifiant universel unique du service d'urgence
      */
     private String clientCompanyUuid = null;
-
-    private final static String HOST = "1.2.3.4";
-    private final static int PORT = 27017;
 
     /**
      * Constructeur principal de la classe ExpProviderContacts
@@ -376,6 +374,7 @@ public class ExpProviderContacts {
         XSSFSheet feuille;
         XSSFRow titre;
         XSSFCell cell;
+        ArrayList<XSSFCell> cells;
         XSSFRow ligne;
         XSSFCellStyle cellStyle;
         XSSFCellStyle titleStyle;
@@ -396,9 +395,17 @@ public class ExpProviderContacts {
         ItemAbstractWithRef patrimony;
         String ref;
         String label;
+        int nbPatrimonies;
+        int nbRows;
+        int i;
+        int j;
+        short nbColumns;
+        short nbColumns2;
+        int nbProviderContacts;
 
         objectMapper = new ObjectMapper();
         filter = new BasicDBObject("company.uid", clientCompanyUuid);
+        System.out.println("filter:"+filter);
 
         MongoCollection<Document> providerContactsCollection = mongoDatabase.getCollection("providerContacts");
         System.out.println(providerContactsCollection.count() + " intervenant(s)");
@@ -433,48 +440,52 @@ public class ExpProviderContacts {
         hlinkStyle.setFont(hlinkFont);
 
         // Ligne de titre
-        titre = feuille.createRow(0);
-        cell = titre.createCell((short) 0);
+        nbColumns = 0;
+        nbRows = 0;
+        titre = feuille.createRow(nbRows++);
+        cell = titre.createCell(nbColumns++);
         cell.setCellStyle(titleStyle);
         cell.setCellValue("Nom");
 
-        cell = titre.createCell((short) 1);
+        cell = titre.createCell(nbColumns++);
         cell.setCellStyle(titleStyle);
         cell.setCellValue("Prénom");
 
-        cell = titre.createCell((short) 2);
+        cell = titre.createCell(nbColumns++);
         cell.setCellStyle(titleStyle);
         cell.setCellValue("ID Performance Immo");
 
-        cell = titre.createCell((short) 3);
+        cell = titre.createCell(nbColumns++);
         cell.setCellStyle(titleStyle);
         cell.setCellValue("UID Société");
 
-        cell = titre.createCell((short) 4);
+        cell = titre.createCell(nbColumns++);
         cell.setCellStyle(titleStyle);
         cell.setCellValue("Société");
 
-        cell = titre.createCell((short) 5);
+        nbColumns2 = nbColumns;
+        cell = titre.createCell(nbColumns++);
         cell.setCellStyle(titleStyle);
         cell.setCellValue("Référence");
 
-        cell = titre.createCell((short) 6);
+        cell = titre.createCell(nbColumns++);
         cell.setCellStyle(titleStyle);
         cell.setCellValue("Libellé");
 
         // Lit les intervenants filtrés par société
         MongoCursor<Document> providerContactsCursor
                 = providerContactsCollection.find(filter).iterator();
-        int n = 0;
+        nbProviderContacts = 1;
         try {
             while (providerContactsCursor.hasNext()) {
                 providerContact = objectMapper.readValue(providerContactsCursor.next().toJson(), ProviderContact.class);
-                System.out.println(n
+                System.out.println(nbProviderContacts++
                         + " name:" + providerContact.getName()
                         + ", label:" + providerContact.getLabel()
-                        + ", uid:" + providerContact.getUid());
-                n++;
-                ligne = feuille.createRow(n);
+                        + ", uid:" + providerContact.getUid()
+                        + ", nbRows:" + nbRows);
+
+                ligne = feuille.createRow(nbRows++);
 
                 name = providerContact.getName();
                 if (name instanceof CivilName) {
@@ -492,51 +503,75 @@ public class ExpProviderContacts {
                     firstName = "class";
                 }
 
+                cells = new ArrayList<>();
                 cell = ligne.createCell(0);
                 cell.setCellValue(lastName);
                 cell.setCellStyle(cellStyle);
+                cells.add(cell);
 
                 cell = ligne.createCell(1);
                 cell.setCellValue(firstName);
                 cell.setCellStyle(cellStyle);
+                cells.add(cell);
 
                 cell = ligne.createCell(2);
                 cell.setCellValue(providerContact.getUid());
-                link = (XSSFHyperlink) createHelper.createHyperlink(HyperlinkType.URL);
-                link.setAddress("https://dashboard.performance-immo.com/providerContacts/" + providerContact.getUid());
-                link.setLabel(providerContact.getUid());
-                cell.setHyperlink((XSSFHyperlink) link);
-                cell.setCellStyle(hlinkStyle);
+//                link = (XSSFHyperlink) createHelper.createHyperlink(HyperlinkType.URL);
+//                link.setAddress("https://dashboard.performance-immo.com/providerContacts/" + providerContact.getUid());
+//                link.setLabel(providerContact.getUid());
+//                cell.setHyperlink((XSSFHyperlink) link);
+//                cell.setCellStyle(hlinkStyle);
+                cell.setCellStyle(cellStyle);
+                cells.add(cell);
 
-                cell = ligne.createCell(3);
                 company = providerContact.getCompany();
+                cell = ligne.createCell(3);
                 cell.setCellValue(company.getUid());
                 cell.setCellStyle(cellStyle);
+                cells.add(cell);
 
                 cell = ligne.createCell(4);
                 cell.setCellValue(company.getLabel());
                 cell.setCellStyle(cellStyle);
+                cells.add(cell);
 
                 patrimonies = providerContact.getPatrimonies();
-                if (patrimonies.size() > 0) {
-                    patrimony = patrimonies.get(0);
-                    ref = patrimony.getRef();
-                    label = patrimony.getLabel();
-                } else {
-                    ref = "";
-                    label = "";
-                }
-                cell = ligne.createCell(5);
-                cell.setCellValue(ref);
-                cell.setCellStyle(cellStyle);
+                if ((nbPatrimonies = patrimonies.size()) > 0) {
+                    for (i = 0; i < nbPatrimonies; i++) {
+                        if (i > 0) {
+                            ligne = feuille.createRow(nbRows++);
+                            for (j = 0; j < nbColumns2; j++) {
+                                cell = ligne.createCell(j);
+                                cell.setCellValue(cells.get(j).getStringCellValue());
+                                cell.setCellStyle(cellStyle);
+                            }
+                        }
+                        patrimony = patrimonies.get(i);
+//                        ref = patrimony.getRef();
+//                        label = patrimony.getLabel();
+                        cell = ligne.createCell(5);
+                        cell.setCellValue(patrimony.getRef());
+                        cell.setCellStyle(cellStyle);
 
-                cell = ligne.createCell(6);
-                cell.setCellValue(label);
-                cell.setCellStyle(cellStyle);
+                        cell = ligne.createCell(6);
+                        cell.setCellValue(patrimony.getLabel());
+                        cell.setCellStyle(cellStyle);
+                    }
+                } else {
+//                    ref = "";
+//                    label = "";
+                    cell = ligne.createCell(5);
+                    cell.setCellValue("");
+                    cell.setCellStyle(cellStyle);
+
+                    cell = ligne.createCell(6);
+                    cell.setCellValue("");
+                    cell.setCellStyle(cellStyle);
+                }
             }
 
             // Ajustement automatique de la largeur des colonnes
-            for (int k = 0; k < 7; k++) {
+            for (int k = 0; k < nbColumns; k++) {
                 feuille.autoSizeColumn(k);
             }
 

@@ -2,6 +2,8 @@
 
 ExpProviderContacts.prop
 *.xlsx
+*.xls
+*.csv
 
 /nbproject/private/
 /build/
