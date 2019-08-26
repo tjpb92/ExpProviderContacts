@@ -1,5 +1,6 @@
 package expprovidercontacts;
 
+import utils.GetArgsException;
 import bkgpi2a.CivilName;
 import bkgpi2a.ItemAbstract;
 import bkgpi2a.ItemAbstractWithRef;
@@ -48,7 +49,7 @@ import utils.Md5;
  * d'une base de données Mongo DB locale vers un fichier Excel
  *
  * @author Thierry Baribaud
- * @version 1.02
+ * @version 1.03
  */
 public class ExpProviderContacts {
 
