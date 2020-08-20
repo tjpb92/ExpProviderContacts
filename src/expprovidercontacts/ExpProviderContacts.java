@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.apache.poi.common.usermodel.HyperlinkType;
 import org.apache.poi.hssf.util.HSSFColor;
 import org.apache.poi.ss.usermodel.BorderStyle;
 import org.apache.poi.ss.usermodel.CreationHelper;
@@ -43,13 +42,14 @@ import utils.ApplicationProperties;
 import utils.DBServer;
 import utils.DBServerException;
 import utils.Md5;
+import utils.ValidServers;
 
 /**
  * Programme Java permettant d'exporter des intervenants (ProviderContacts)
  * d'une base de données Mongo DB locale vers un fichier Excel
  *
  * @author Thierry Baribaud
- * @version 1.03
+ * @version 1.04
  */
 public class ExpProviderContacts {
 
@@ -57,7 +57,7 @@ public class ExpProviderContacts {
      * mgoDbServerType : prod pour le serveur de production, pre-prod pour le
      * serveur de pré-production. Valeur par défaut : pre-prod.
      */
-    private String mgoDbServerType = "pre-prod";
+    private static String mgoDbServerType = "pre-prod";
 
     /**
      * debugMode : fonctionnement du programme en mode debug (true/false).
@@ -74,22 +74,22 @@ public class ExpProviderContacts {
     /**
      * path : répertoire où sera déposé le fichier des résultats
      */
-    private String path = ".";
+    private static String path = ".";
 
     /**
      * filename : nom du fichier contenant les résultats
      */
-    private String filename = "providerContacts.xlsx";
+    private static String filename = "providerContacts.xlsx";
 
     /**
      * unum : référence au service d'urgence (identifiant interne)
      */
-    private int unum;
+    private static int unum;
 
     /**
      * clientCompanyUuid : identifiant universel unique du service d'urgence
      */
-    private String clientCompanyUuid = null;
+    private static String clientCompanyUuid = null;
 
     /**
      * Constructeur principal de la classe ExpProviderContacts
@@ -161,8 +161,9 @@ public class ExpProviderContacts {
      * Récupère les paramètres en ligne de commande
      *
      * @param args arguments en ligne de commande
+     * @throws utils.GetArgsException en cas d'erreur sur les paramètres
      */
-    private void getArgs(String[] args) throws GetArgsException {
+    public static void getArgs(String[] args) throws GetArgsException {
         int i;
         int n;
         int ip1;
@@ -183,8 +184,8 @@ public class ExpProviderContacts {
             switch (currentParam) {
                 case "-mgodb":
                     if (nextParam != null) {
-                        if (nextParam.equals("pre-prod") || nextParam.equals("prod")) {
-                            this.mgoDbServerType = nextParam;
+                        if (ValidServers.isAValidServer(nextParam)) {
+                            ExpProviderContacts.mgoDbServerType = nextParam;
                         } else {
                             throw new GetArgsException("ERREUR : Mauvais serveur Mongo : " + nextParam);
                         }
@@ -195,7 +196,7 @@ public class ExpProviderContacts {
                     break;
                 case "-path":
                     if (nextParam != null) {
-                        this.path = nextParam;
+                        ExpProviderContacts.path = nextParam;
                         i = ip1;
                     } else {
                         throw new GetArgsException("ERREUR : Répertoire non défini");
@@ -203,7 +204,7 @@ public class ExpProviderContacts {
                     break;
                 case "-o":
                     if (nextParam != null) {
-                        this.filename = nextParam;
+                        ExpProviderContacts.filename = nextParam;
                         i = ip1;
                     } else {
                         throw new GetArgsException("ERREUR : Fichier non défini");
@@ -212,7 +213,7 @@ public class ExpProviderContacts {
                 case "-u":
                     if (nextParam != null) {
                         try {
-                            this.unum = Integer.parseInt(nextParam);
+                            ExpProviderContacts.unum = Integer.parseInt(nextParam);
                             i = ip1;
                         } catch (Exception exception) {
                             throw new GetArgsException("L'identifiant du service d'urgence doit être numérique : " + nextParam);
@@ -224,17 +225,17 @@ public class ExpProviderContacts {
                     break;
                 case "-clientCompany":
                     if (nextParam != null) {
-                        this.clientCompanyUuid = nextParam;
+                        ExpProviderContacts.clientCompanyUuid = nextParam;
                         i = ip1;
                     } else {
                         throw new GetArgsException("ERREUR : Identifiant UUID du service d'urgence non défini");
                     }
                     break;
                 case "-d":
-                    setDebugMode(true);
+                    ExpProviderContacts.debugMode = true;
                     break;
                 case "-t":
-                    setTestMode(true);
+                    ExpProviderContacts.testMode = true;
                     break;
                 default:
                     usage();
